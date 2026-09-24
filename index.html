@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>INVEST | استثمر بذكاء</title>
+
+  <meta
+    name="description"
+    content="INVEST - منصة استثمار رقمية حديثة"
+  >
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container nav">
+
+      <a href="#home" class="logo">
+        <span class="logo-icon">I</span>
+        <span>INVEST</span>
+      </a>
+
+      <nav class="desktop-menu">
+        <a href="#home" class="active">الرئيسية</a>
+        <a href="#features">المميزات</a>
+        <a href="#investments">الاستثمار</a>
+        <a href="#how">كيف يعمل</a>
+        <a href="#about">عن المنصة</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="btn btn-outline" onclick="openModal('loginModal')">
+          تسجيل الدخول
+        </button>
+
+        <button class="btn btn-primary" onclick="openModal('registerModal')">
+          إنشاء حساب
+        </button>
+      </div>
+
+      <button
+        class="mobile-menu-btn"
+        id="mobileMenuBtn"
+        aria-label="فتح القائمة"
+      >
+        ☰
+      </button>
+
+    </div>
+
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#home">الرئيسية</a>
+      <a href="#features">المميزات</a>
+      <a href="#investments">الاستثمار</a>
+      <a href="#how">كيف يعمل</a>
+      <a href="#about">عن المنصة</a>
+
+      <div class="mobile-actions">
+        <button class="btn btn-outline" onclick="openModal('loginModal')">
+          تسجيل الدخول
+        </button>
+
+        <button class="btn btn-primary" onclick="openModal('registerModal')">
+          إنشاء حساب
+        </button>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- HERO -->
+  <main>
+
+    <section class="hero" id="home">
+      <div class="container hero-grid">
+
+        <div class="hero-content">
+
+          <div class="badge">
+            منصة استثمار رقمية حديثة
+          </div>
+
+          <h1>
+            استثمر بذكاء،
+            <span>ونمِّ أموالك</span>
+          </h1>
+
+          <p>
+            منصة رقمية تساعدك على متابعة استثماراتك وإدارة حسابك
+            بطريقة بسيطة وواضحة من مكان واحد.
+          </p>
+
+          <div class="hero-buttons">
+            <button
+              class="btn btn-primary btn-large"
+              onclick="openModal('registerModal')"
+            >
+              ابدأ الآن
+            </button>
+
+            <a href="#how" class="btn btn-outline btn-large">
+              كيف يعمل؟
+            </a>
+          </div>
+
+          <div class="hero-stats">
+            <div>
+              <strong>24/7</strong>
+              <span>متابعة الحساب</span>
+            </div>
+
+            <div>
+              <strong>100%</strong>
+              <span>واجهة رقمية</span>
+            </div>
+
+            <div>
+              <strong>سهل</strong>
+              <span>الاستخدام</span>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- VISUAL CARD -->
+        <div class="hero-card-wrapper">
+
+          <div class="glow"></div>
+
+          <div class="dashboard-card">
+
+            <div class="dashboard-top">
+              <div>
+                <small>الرصيد</small>
+                <h2>$0.00</h2>
+              </div>
+
+              <div class="balance-icon">
+                $
+              </div>
+            </div>
+
+            <div class="chart">
+              <div class="chart-line"></div>
+
+              <div class="chart-point p1"></div>
+              <div class="chart-point p2"></div>
+              <div class="chart-point p3"></div>
+              <div class="chart-point p4"></div>
+              <div class="chart-point p5"></div>
+            </div>
+
+            <div class="dashboard-bottom">
+              <div>
+                <small>الاستثمارات</small>
+                <strong>—</strong>
+              </div>
+
+              <div>
+                <small>الأرباح</small>
+                <strong>—</strong>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- FEATURES -->
+    <section class="section" id="features">
+
+      <div class="container">
+
+        <div class="section-heading">
+          <span class="section-label">المميزات</span>
+
+          <h2>
+            كل ما تحتاجه في مكان واحد
+          </h2>
+
+          <p>
+            تجربة رقمية بسيطة ومصممة لتسهيل إدارة حسابك.
+          </p>
+        </div>
+
+
+        <div class="features-grid">
+
+          <article class="feature-card">
+            <div class="feature-icon">◈</div>
+            <h3>واجهة بسيطة</h3>
+            <p>
+              تصميم واضح وسهل الاستخدام على الهاتف والكمبيوتر.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">↗</div>
+            <h3>متابعة الاستثمارات</h3>
+            <p>
+              إمكانية متابعة بيانات استثماراتك من حسابك.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">▣</div>
+            <h3>إدارة الحساب</h3>
+            <p>
+              الوصول إلى معلومات حسابك بطريقة منظمة.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">✓</div>
+            <h3>تجربة رقمية</h3>
+            <p>
+              موقع سريع ومتجاوب يعمل من متصفح الإنترنت.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">◎</div>
+            <h3>متابعة مستمرة</h3>
+            <p>
+              واجهة مهيأة للوصول إلى بياناتك بسهولة.
+            </p>
+          </article>
+
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- INVESTMENTS -->
+    <section class="section investments" id="investments">
+
+      <div class="container">
+
+        <div class="section-heading">
+          <span class="section-label">الاستثمار</span>
+
+          <h2>
+            خطط الاستثمار
+          </h2>
+
+          <p>
+            سيتم تحميل خطط الاستثمار من قاعدة البيانات عند ربط الموقع
+            بـ Supabase في المرحلة التالية.
+          </p>
+        </div>
+
+
+        <div class="empty-plans">
+
+          <div class="empty-icon">◫</div>
+
+          <h3>
+            لا توجد خطط معروضة حاليًا
+          </h3>
+
+          <p>
+            سيتم عرض الخطط الفعلية هنا بعد ربط قاعدة البيانات.
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- HOW IT WORKS -->
+    <section class="section" id="how">
+
+      <div class="container">
+
+        <div class="section-heading">
+          <span class="section-label">كيف يعمل</span>
+
+          <h2>
+            خطوات بسيطة
+          </h2>
+        </div>
+
+
+        <div class="steps">
+
+          <div class="step">
+            <div class="step-number">01</div>
+
+            <h3>إنشاء حساب</h3>
+
+            <p>
+              أنشئ حسابك للوصول إلى المنصة.
+            </p>
+          </div>
+
+
+          <div class="step">
+            <div class="step-number">02</div>
+
+            <h3>اختيار الخطة</h3>
+
+            <p>
+              استعرض الخطط المتاحة واختر ما يناسبك.
+            </p>
+          </div>
+
+
+          <div class="step">
+            <div class="step-number">03</div>
+
+            <h3>الاستثمار</h3>
+
+            <p>
+              قم بإدارة استثمارك من حسابك.
+            </p>
+          </div>
+
+
+          <div class="step">
+            <div class="step-number">04</div>
+
+            <h3>متابعة الحساب</h3>
+
+            <p>
+              تابع بياناتك وعملياتك من لوحة حسابك.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ABOUT -->
+    <section class="section about" id="about">
+
+      <div class="container about-box">
+
+        <div>
+          <span class="section-label">عن INVEST</span>
+
+          <h2>
+            تجربة استثمار رقمية بسيطة
+          </h2>
+        </div>
+
+        <p>
+          INVEST هو موقع ويب مصمم لتوفير تجربة رقمية منظمة
+          لإدارة ومتابعة الحساب والاستثمارات من خلال واجهة حديثة
+          ومتجاوبة.
+        </p>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- FOOTER -->
+  <footer class="footer">
+
+    <div class="container footer-content">
+
+      <div>
+        <a href="#home" class="logo">
+          <span class="logo-icon">I</span>
+          <span>INVEST</span>
+        </a>
+
+        <p>
+          منصة استثمار رقمية حديثة.
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <a href="#home">الرئيسية</a>
+        <a href="#features">المميزات</a>
+        <a href="#investments">الاستثمار</a>
+        <a href="#how">كيف يعمل</a>
+        <a href="#about">عن المنصة</a>
+      </div>
+
+    </div>
+
+    <div class="copyright">
+      © 2026 INVEST. جميع الحقوق محفوظة.
+    </div>
+
+  </footer>
+
+
+  <!-- LOGIN MODAL -->
+  <div class="modal" id="loginModal">
+
+    <div class="modal-box">
+
+      <button
+        class="modal-close"
+        onclick="closeModal('loginModal')"
+      >
+        ×
+      </button>
+
+      <div class="modal-header">
+        <h2>تسجيل الدخول</h2>
+        <p>ادخل إلى حسابك</p>
+      </div>
+
+      <form onsubmit="demoSubmit(event)">
+
+        <label>البريد الإلكتروني</label>
+        <input
+          type="email"
+          placeholder="example@email.com"
+          required
+        >
+
+        <label>كلمة المرور</label>
+        <input
+          type="password"
+          placeholder="••••••••"
+          required
+        >
+
+        <button class="btn btn-primary full" type="submit">
+          تسجيل الدخول
+        </button>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- REGISTER MODAL -->
+  <div class="modal" id="registerModal">
+
+    <div class="modal-box">
+
+      <button
+        class="modal-close"
+        onclick="closeModal('registerModal')"
+      >
+        ×
+      </button>
+
+      <div class="modal-header">
+        <h2>إنشاء حساب</h2>
+        <p>أنشئ حسابك في INVEST</p>
+      </div>
+
+      <form onsubmit="demoSubmit(event)">
+
+        <label>الاسم</label>
+        <input
+          type="text"
+          placeholder="الاسم الكامل"
+          required
+        >
+
+        <label>البريد الإلكتروني</label>
+        <input
+          type="email"
+          placeholder="example@email.com"
+          required
+        >
+
+        <label>كلمة المرور</label>
+        <input
+          type="password"
+          placeholder="••••••••"
+          required
+        >
+
+        <button class="btn btn-primary full" type="submit">
+          إنشاء الحساب
+        </button>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <script src="./app.js"></script>
+
+</body>
+  </html>
