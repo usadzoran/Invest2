@@ -1,6 +1,0 @@
-{
-  "name": "INVEST",
-  "description": "منصة INVEST المالية والاستثمارية الذكية لتنمية وإدارة أموالك بكل أمان وشفافية.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
