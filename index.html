@@ -51,7 +51,10 @@
         </button>
       </div>
 
-      <div class="nav-actions" id="userNavActions" style="display: none; align-items: center; gap: 12px;">
+      <div class="nav-actions" id="userNavActions" style="display: none; align-items: center; gap: 10px;">
+        <button class="btn" id="navAdminBtn" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: #0b1120; border: none; font-weight: 700; padding: 6px 14px; font-size: 13px;" onclick="scrollToAdminPanel()">
+          👑 لوحة الإدارة (OWNER)
+        </button>
         <div class="user-profile-badge">
           <span id="navUserEmail">مستخدم</span>
         </div>
@@ -89,7 +92,10 @@
       </div>
 
       <div class="mobile-actions" id="mobileUserActions" style="display: none;">
-        <div class="user-profile-badge" style="justify-content: center;">
+        <button class="btn full" id="mobileNavAdminBtn" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: #0b1120; border: none; font-weight: 700; margin-bottom: 8px;" onclick="scrollToAdminPanel()">
+          👑 لوحة الإدارة (OWNER)
+        </button>
+        <div class="user-profile-badge" style="justify-content: center; margin-bottom: 8px;">
           <span id="mobileNavUserEmail">مستخدم</span>
         </div>
         <button class="btn btn-outline full" onclick="logoutUser()">
@@ -410,6 +416,187 @@
 
       </div>
     </section>
+
+    <!-- OWNER ADMIN DASHBOARD SECTION -->
+    <section class="admin-section" id="adminPanel" style="display: none;">
+      <div class="container">
+
+        <div id="adminAccessDenied" style="display: none; text-align: center; padding: 50px 20px; background: var(--card); border: 1px solid #ef4444; border-radius: 20px;">
+          <div style="font-size: 48px; margin-bottom: 16px;">⛔</div>
+          <h3 style="color: #ef4444; font-size: 22px; margin-bottom: 8px;">غير مصرح بالوصول (Access Denied)</h3>
+          <p style="color: var(--muted); max-width: 460px; margin: 0 auto;">
+            هذه اللوحة محمية وخاصة بصاحب المنصة (OWNER) فقط. حسابك الحالي لا يمتلك الصلاحية الإدارية للوصول إلى هذه البيانات.
+          </p>
+        </div>
+
+        <div id="adminAuthorizedContent" style="display: none;">
+
+          <!-- Admin Header Box -->
+          <div class="admin-header-box">
+            <div class="admin-title-row">
+              <h2>
+                <span>👑</span>
+                لوحة تحكم صاحب الموقع (Owner Admin Dashboard)
+                <span class="admin-badge-owner">OWNER PRIVILEGED</span>
+              </h2>
+              <p style="color: var(--muted); font-size: 13px; margin-top: 6px;">
+                إدارة المنصة الشاملة، متابعة المستخدمين، وتدقيق العمليات الموثقة على الـ Blockchain
+              </p>
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <button class="btn btn-outline" style="border-color: #f59e0b; color: #f59e0b; font-size: 12px; padding: 8px 16px;" onclick="loadAdminDashboardData()">
+                ⟳ تحديث بيانات الإدارة
+              </button>
+            </div>
+          </div>
+
+          <!-- Strict Security Banner -->
+          <div class="admin-security-banner">
+            <div style="font-size: 22px;">🔒</div>
+            <div>
+              <strong>معيار الأمان العسكري (Zero-Knowledge Key Architecture):</strong>
+              المفاتيح الخاصة (Private Keys) وعبارات الاسترداد (Seed Phrases) للمستخدمين مشفرة بالكامل بخوارزمية <strong>AES-256-GCM</strong>.
+              لا تظهر المفاتيح لأي شخص بما في ذلك صاحب الموقع (OWNER) أو واجهة الإدارة، مما يضمن أمان وخصوصية تامة لأصول المستخدمين.
+            </div>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+              <small>إجمالي المستخدمين</small>
+              <h3 id="adminStatUsers">0</h3>
+            </div>
+            <div class="admin-stat-card">
+              <small>المحافظ المنشأة</small>
+              <h3 id="adminStatWallets">0</h3>
+            </div>
+            <div class="admin-stat-card">
+              <small>إجمالي المعاملات</small>
+              <h3 id="adminStatTxs">0</h3>
+            </div>
+            <div class="admin-stat-card">
+              <small>إجمالي الإيداعات</small>
+              <h3 id="adminStatDeposits">0</h3>
+            </div>
+            <div class="admin-stat-card">
+              <small>إجمالي السحوبات</small>
+              <h3 id="adminStatWithdrawals">0</h3>
+            </div>
+            <div class="admin-stat-card">
+              <small>شبكات البلوكشين</small>
+              <h3 style="font-size: 18px; color: var(--green); margin-top: 6px;">BSC & TRON نشطة ✓</h3>
+            </div>
+          </div>
+
+          <!-- Admin Tabs Navigation -->
+          <div class="admin-tabs-nav">
+            <button class="admin-tab-btn active" id="tabBtnUsers" onclick="switchAdminTab('users')">
+              👥 المستخدمين والمحافظ
+            </button>
+            <button class="admin-tab-btn" id="tabBtnLedger" onclick="switchAdminTab('ledger')">
+              📜 سجل العمليات الموحد
+            </button>
+            <button class="admin-tab-btn" id="tabBtnSettings" onclick="switchAdminTab('settings')">
+              ⚙️ إعدادات المنصة والحدود
+            </button>
+          </div>
+
+          <!-- Tab 1: Users & Wallets -->
+          <div class="admin-panel-card" id="adminTabUsers">
+            <h3 style="margin-bottom: 16px; font-size: 18px;">قائمة حسابات المستخدمين والمحافظ الرقمية</h3>
+            <div class="tx-table-container">
+              <table class="tx-table">
+                <thead>
+                  <tr>
+                    <th>البريد الإلكتروني</th>
+                    <th>الاسم</th>
+                    <th>الدور (Role)</th>
+                    <th>عنوان TRON (TRC20)</th>
+                    <th>عنوان BSC (BEP20 / BNB)</th>
+                    <th>تاريخ التسجيل</th>
+                  </tr>
+                </thead>
+                <tbody id="adminUsersTableBody">
+                  <tr>
+                    <td colspan="6" class="empty-tx-placeholder">جاري تحميل بيانات المستخدمين...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 2: Platform Unified Ledger -->
+          <div class="admin-panel-card" id="adminTabLedger" style="display: none;">
+            <h3 style="margin-bottom: 16px; font-size: 18px;">سجل المعاملات والإيداعات الموثقة على الـ Blockchain</h3>
+            <div class="tx-table-container">
+              <table class="tx-table">
+                <thead>
+                  <tr>
+                    <th>النوع</th>
+                    <th>العملة والشبكة</th>
+                    <th>المبلغ</th>
+                    <th>المستلم / المودع</th>
+                    <th>رمز المعاملة (TxHash)</th>
+                    <th>الحالة</th>
+                    <th>التاريخ</th>
+                  </tr>
+                </thead>
+                <tbody id="adminLedgerTableBody">
+                  <tr>
+                    <td colspan="7" class="empty-tx-placeholder">لا توجد عمليات مسجلة حتى الآن.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 3: Site Settings Form -->
+          <div class="admin-panel-card" id="adminTabSettings" style="display: none; max-width: 650px;">
+            <h3 style="margin-bottom: 16px; font-size: 18px;">إعدادات وتشغيل المنصة (Site Settings)</h3>
+            <div id="adminSettingsFeedback" style="display: none; margin-bottom: 16px;"></div>
+
+            <form onsubmit="handleSaveSettings(event)">
+              <label>اسم الموقع (Site Name):</label>
+              <input type="text" id="settingSiteName" required>
+
+              <div style="margin: 16px 0; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="settingMaintenanceMode" style="width: auto; cursor: pointer;">
+                <label for="settingMaintenanceMode" style="margin: 0; cursor: pointer;">تفعيل وضع الصيانة (Maintenance Mode)</label>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px;">
+                <div>
+                  <label>الحد الأدنى للإيداع (USDT):</label>
+                  <input type="number" step="0.1" id="settingMinDeposit" required>
+                </div>
+                <div>
+                  <label>الحد الأدنى للسحب (USDT):</label>
+                  <input type="number" step="0.1" id="settingMinWithdraw" required>
+                </div>
+              </div>
+
+              <div style="margin-top: 14px;">
+                <label>نسبة رسوم السحب (%):</label>
+                <input type="number" step="0.1" id="settingWithdrawFee" required>
+              </div>
+
+              <div style="margin-top: 14px;">
+                <label>بريد صاحب الموقع (OWNER Email):</label>
+                <input type="email" id="settingOwnerEmail" readonly style="opacity: 0.7; cursor: not-allowed;">
+              </div>
+
+              <button class="btn btn-primary full" type="submit" id="adminSettingsSubmitBtn" style="margin-top: 20px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: 700;">
+                حفظ التغييرات في Supabase
+              </button>
+            </form>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
     <section class="section" id="features">
 
       <div class="container">

@@ -8,7 +8,10 @@ import {
   getFullWalletDetails,
   checkSupabaseStatus,
   getDecryptedVault,
-  recordTransaction
+  recordTransaction,
+  getAdminOverview,
+  updateSiteSettings,
+  OWNER_EMAIL
 } from './db-manager.js';
 import {
   estimateNetworkFee,
@@ -30,8 +33,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// Simple in-memory session tokens for authenticated client requests
-const sessions = new Map(); // token -> userId
+// In-memory session tokens for authenticated client requests
+const sessions = new Map(); // token -> { userId, role, email }
 
 function authenticateRequest(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -39,12 +42,37 @@ function authenticateRequest(req, res, next) {
     return res.status(401).json({ error: 'غير مصرح به. يرجى تسجيل الدخول.' });
   }
   const token = authHeader.split(' ')[1];
-  const userId = sessions.get(token);
-  if (!userId) {
+  const session = sessions.get(token);
+  if (!session) {
     return res.status(401).json({ error: 'جلسة العمل منتهية الصلاحية. يرجى تسجيل الدخول مجدداً.' });
   }
-  req.userId = userId;
+
+  if (typeof session === 'string') {
+    req.userId = session;
+    req.userRole = 'USER';
+    req.userEmail = '';
+  } else {
+    req.userId = session.userId;
+    req.userRole = session.role;
+    req.userEmail = session.email;
+  }
   next();
+}
+
+/**
+ * OWNER ONLY authorization middleware
+ * Strict security: Blocks all standard USERs even if they know the route URL
+ */
+function authenticateOwner(req, res, next) {
+  authenticateRequest(req, res, () => {
+    const isOwner = req.userRole === 'OWNER' || (req.userEmail && req.userEmail.toLowerCase() === OWNER_EMAIL);
+    if (!isOwner) {
+      return res.status(403).json({
+        error: 'غير مصرح لك بالوصول: هذه اللوحة مخصصة لصاحب الموقع (OWNER) فقط.'
+      });
+    }
+    next();
+  });
 }
 
 /**
@@ -102,7 +130,7 @@ app.post('/api/auth/register', async (req, res) => {
     });
 
     const token = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
-    sessions.set(token, result.userId);
+    sessions.set(token, { userId: result.userId, role: result.role, email: result.email });
 
     res.json({
       success: true,
@@ -110,7 +138,8 @@ app.post('/api/auth/register', async (req, res) => {
       user: {
         id: result.userId,
         email: result.email,
-        fullName: result.fullName
+        fullName: result.fullName,
+        role: result.role
       },
       wallet: {
         walletId: result.walletId,
@@ -141,7 +170,7 @@ app.post('/api/auth/login', async (req, res) => {
     });
 
     const token = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
-    sessions.set(token, result.userId);
+    sessions.set(token, { userId: result.userId, role: result.role, email: result.email });
 
     res.json({
       success: true,
@@ -149,7 +178,8 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         id: result.userId,
         email: result.email,
-        fullName: result.fullName
+        fullName: result.fullName,
+        role: result.role
       },
       wallet: {
         walletId: result.walletId,
@@ -397,6 +427,40 @@ app.post('/api/wallet/send', authenticateRequest, async (req, res) => {
   } catch (err) {
     console.error('Send error:', err.message);
     res.status(400).json({ error: err.message });
+  }
+});
+
+/**
+ * ADMIN: Get System Overview & Audit (OWNER ONLY)
+ * Strict Security: Never reveals user private keys or master encryption key!
+ */
+app.get('/api/admin/overview', authenticateOwner, async (req, res) => {
+  try {
+    const data = await getAdminOverview();
+    res.json({
+      success: true,
+      ...data
+    });
+  } catch (err) {
+    console.error('Admin overview error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * ADMIN: Update Platform Settings (OWNER ONLY)
+ */
+app.post('/api/admin/settings', authenticateOwner, async (req, res) => {
+  try {
+    const updated = await updateSiteSettings(req.body);
+    res.json({
+      success: true,
+      settings: updated,
+      message: 'تم حفظ إعدادات المنصة بنجاح.'
+    });
+  } catch (err) {
+    console.error('Admin settings update error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 

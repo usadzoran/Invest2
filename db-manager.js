@@ -19,12 +19,22 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false }
 });
 
+export const OWNER_EMAIL = (process.env.OWNER_EMAIL || 'wahablila31000@gmail.com').toLowerCase();
+
 // In-memory / local fallback store
 let localStore = {
-  users: {}, // email -> { id, email, passwordHash, fullName, createdAt }
+  users: {}, // email -> { id, email, passwordHash, fullName, role, createdAt }
   wallets: {}, // userId -> { id, userId, encryptedVault, createdAt }
   addresses: {}, // userId -> { bscAddress, tronAddress }
-  transactions: [] // list of confirmed/pending transactions
+  transactions: [], // list of confirmed/pending transactions
+  settings: {
+    siteName: 'INVEST',
+    maintenanceMode: false,
+    minDepositUsdt: 1.0,
+    minWithdrawUsdt: 5.0,
+    withdrawFeePercent: 0.5,
+    ownerEmail: OWNER_EMAIL
+  }
 };
 
 // Load local store if exists
@@ -129,37 +139,47 @@ export async function authenticateOrRegister({ email, password, fullName, isRegi
       if (!isRegister) {
         throw new Error('الحساب غير موجود، يرجى إنشاء حساب جديد أولاً');
       }
+      const userRole = (normalizedEmail === OWNER_EMAIL) ? 'OWNER' : 'USER';
       userId = 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
       localStore.users[normalizedEmail] = {
         id: userId,
         email: normalizedEmail,
         password: password, // For auth
         fullName: fullName || normalizedEmail.split('@')[0],
+        role: userRole,
         createdAt: new Date().toISOString()
       };
       saveLocalStore();
     }
   } else {
     // If authenticated through Supabase, also register in local memory if needed
+    const userRole = (normalizedEmail === OWNER_EMAIL) ? 'OWNER' : 'USER';
     if (!localStore.users[normalizedEmail]) {
       localStore.users[normalizedEmail] = {
         id: userId,
         email: normalizedEmail,
         password: password,
         fullName: fullName || normalizedEmail.split('@')[0],
+        role: userRole,
         createdAt: new Date().toISOString()
       };
       saveLocalStore();
+    } else {
+      localStore.users[normalizedEmail].role = userRole;
     }
   }
 
   // Ensure user has permanent wallet
   const walletData = await getOrCreateUserWallet(userId, normalizedEmail);
 
+  const currentUser = localStore.users[normalizedEmail] || {};
+  const effectiveRole = (normalizedEmail === OWNER_EMAIL) ? 'OWNER' : (currentUser.role || 'USER');
+
   return {
     userId,
     email: normalizedEmail,
-    fullName: localStore.users[normalizedEmail]?.fullName || fullName || '',
+    fullName: currentUser.fullName || fullName || '',
+    role: effectiveRole,
     supabaseConnected,
     ...walletData
   };
@@ -416,4 +436,111 @@ export async function recordTransaction(txData) {
   }
 
   return record;
+}
+
+/**
+ * Get Admin Overview (OWNER ONLY)
+ * STRICT SECURITY: Never returns encrypted_vault, private keys, or seed phrases!
+ */
+export async function getAdminOverview() {
+  let userProfiles = [];
+
+  // Try Supabase first
+  try {
+    const { data: dbProfiles } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, role, created_at');
+    if (dbProfiles && dbProfiles.length > 0) {
+      userProfiles = dbProfiles;
+    }
+  } catch (err) {
+    // Fall back to local
+  }
+
+  // Fallback to localStore
+  if (userProfiles.length === 0) {
+    userProfiles = Object.values(localStore.users).map(u => ({
+      id: u.id,
+      email: u.email,
+      full_name: u.fullName,
+      role: u.role || (u.email.toLowerCase() === OWNER_EMAIL ? 'OWNER' : 'USER'),
+      created_at: u.createdAt
+    }));
+  }
+
+  // Attach only public blockchain addresses
+  const usersWithPublicAddresses = userProfiles.map(p => {
+    const addrs = localStore.addresses[p.id] || { bscAddress: '—', tronAddress: '—' };
+    return {
+      id: p.id,
+      email: p.email,
+      fullName: p.full_name,
+      role: p.role,
+      createdAt: p.created_at,
+      bscAddress: addrs.bscAddress,
+      tronAddress: addrs.tronAddress
+      // Notice: encryptedVault, privateKey, and seedPhrase are NOT included here!
+    };
+  });
+
+  const txs = localStore.transactions || [];
+  const deposits = txs.filter(t => t.type === 'deposit');
+  const withdrawals = txs.filter(t => t.type === 'withdraw');
+
+  // Try fetching settings from Supabase or fallback
+  let settings = localStore.settings;
+  try {
+    const { data: dbSettings } = await supabase.from('site_settings').select('*').limit(1).maybeSingle();
+    if (dbSettings) {
+      settings = {
+        siteName: dbSettings.site_name,
+        maintenanceMode: dbSettings.maintenance_mode,
+        minDepositUsdt: dbSettings.min_deposit_usdt,
+        minWithdrawUsdt: dbSettings.min_withdraw_usdt,
+        withdrawFeePercent: dbSettings.withdraw_fee_percent,
+        ownerEmail: dbSettings.owner_email
+      };
+    }
+  } catch (err) {}
+
+  return {
+    stats: {
+      totalUsers: userProfiles.length,
+      totalWallets: Object.keys(localStore.wallets).length,
+      totalTransactions: txs.length,
+      totalDeposits: deposits.length,
+      totalWithdrawals: withdrawals.length,
+      supportedNetworksCount: 2,
+      supportedAssetsCount: 3
+    },
+    users: usersWithPublicAddresses,
+    recentTransactions: txs.slice(0, 30),
+    settings: settings || localStore.settings
+  };
+}
+
+/**
+ * Update site settings (OWNER ONLY)
+ */
+export async function updateSiteSettings(newSettings) {
+  localStore.settings = {
+    ...localStore.settings,
+    ...newSettings
+  };
+  saveLocalStore();
+
+  try {
+    await supabase.from('site_settings').upsert({
+      id: 'global',
+      site_name: localStore.settings.siteName,
+      maintenance_mode: localStore.settings.maintenanceMode,
+      min_deposit_usdt: localStore.settings.minDepositUsdt,
+      min_withdraw_usdt: localStore.settings.minWithdrawUsdt,
+      withdraw_fee_percent: localStore.settings.withdrawFeePercent,
+      owner_email: localStore.settings.ownerEmail,
+      updated_at: new Date().toISOString()
+    });
+  } catch (err) {}
+
+  return localStore.settings;
 }

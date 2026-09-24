@@ -127,18 +127,33 @@ function updateAuthUI() {
   const guestWalletView = document.getElementById('walletGuestView');
   const authWalletView = document.getElementById('walletAuthView');
 
+  const navAdminBtn = document.getElementById('navAdminBtn');
+  const mobileNavAdminBtn = document.getElementById('mobileNavAdminBtn');
+  const adminPanel = document.getElementById('adminPanel');
+
   if (token && user) {
     if (guestNav) guestNav.style.display = 'none';
     if (userNav) userNav.style.display = 'flex';
     if (mobileGuestNav) mobileGuestNav.style.display = 'none';
     if (mobileUserNav) mobileUserNav.style.display = 'flex';
 
-    const displayName = user.fullName || user.email;
+    const isOwner = user.role === 'OWNER';
+    if (navAdminBtn) navAdminBtn.style.display = isOwner ? 'inline-block' : 'none';
+    if (mobileNavAdminBtn) mobileNavAdminBtn.style.display = isOwner ? 'block' : 'none';
+
+    const displayName = (user.fullName || user.email) + (isOwner ? ' (👑 OWNER)' : '');
     if (navEmail) navEmail.innerText = displayName;
     if (mobileNavEmail) mobileNavEmail.innerText = displayName;
 
     if (guestWalletView) guestWalletView.style.display = 'none';
     if (authWalletView) authWalletView.style.display = 'block';
+
+    if (isOwner && adminPanel) {
+      adminPanel.style.display = 'block';
+      loadAdminDashboardData();
+    } else if (adminPanel) {
+      adminPanel.style.display = 'none';
+    }
 
     fetchWalletDetails();
   } else {
@@ -146,6 +161,10 @@ function updateAuthUI() {
     if (userNav) userNav.style.display = 'none';
     if (mobileGuestNav) mobileGuestNav.style.display = 'flex';
     if (mobileUserNav) mobileUserNav.style.display = 'none';
+
+    if (navAdminBtn) navAdminBtn.style.display = 'none';
+    if (mobileNavAdminBtn) mobileNavAdminBtn.style.display = 'none';
+    if (adminPanel) adminPanel.style.display = 'none';
 
     if (guestWalletView) guestWalletView.style.display = 'block';
     if (authWalletView) authWalletView.style.display = 'none';
@@ -745,6 +764,195 @@ async function handleVerifyTx(event) {
   }
 }
 
+// OWNER Admin Dashboard Logic
+function scrollToAdminPanel() {
+  const panel = document.getElementById('adminPanel');
+  if (panel) {
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth' });
+    loadAdminDashboardData();
+  }
+}
+
+async function loadAdminDashboardData() {
+  const token = getAuthToken();
+  if (!token) return;
+
+  const accessDenied = document.getElementById('adminAccessDenied');
+  const authContent = document.getElementById('adminAuthorizedContent');
+
+  try {
+    const res = await fetch('/api/admin/overview', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (res.status === 403) {
+      if (accessDenied) accessDenied.style.display = 'block';
+      if (authContent) authContent.style.display = 'none';
+      return;
+    }
+
+    if (!res.ok) throw new Error('فشل تحميل بيانات لوحة الإدارة');
+
+    const data = await res.json();
+
+    if (accessDenied) accessDenied.style.display = 'none';
+    if (authContent) authContent.style.display = 'block';
+
+    // Populate stats
+    const uStat = document.getElementById('adminStatUsers');
+    const wStat = document.getElementById('adminStatWallets');
+    const txStat = document.getElementById('adminStatTxs');
+    const depStat = document.getElementById('adminStatDeposits');
+    const wthStat = document.getElementById('adminStatWithdrawals');
+
+    if (uStat) uStat.innerText = data.stats.totalUsers || 0;
+    if (wStat) wStat.innerText = data.stats.totalWallets || 0;
+    if (txStat) txStat.innerText = data.stats.totalTransactions || 0;
+    if (depStat) depStat.innerText = data.stats.totalDeposits || 0;
+    if (wthStat) wthStat.innerText = data.stats.totalWithdrawals || 0;
+
+    // Populate Users table
+    const usersTbody = document.getElementById('adminUsersTableBody');
+    if (usersTbody) {
+      if (!data.users || data.users.length === 0) {
+        usersTbody.innerHTML = '<tr><td colspan="6" class="empty-tx-placeholder">لا يوجد مستخدمون مسجلون بعد.</td></tr>';
+      } else {
+        usersTbody.innerHTML = data.users.map(u => `
+          <tr>
+            <td><strong>${u.email}</strong></td>
+            <td>${u.fullName || '—'}</td>
+            <td>
+              <span class="role-tag ${u.role === 'OWNER' ? 'owner' : 'user'}">
+                ${u.role === 'OWNER' ? '👑 OWNER' : 'USER'}
+              </span>
+            </td>
+            <td><code style="font-size: 11px;">${u.tronAddress || '—'}</code></td>
+            <td><code style="font-size: 11px;">${u.bscAddress || '—'}</code></td>
+            <td><small>${new Date(u.createdAt).toLocaleDateString('ar-EG')}</small></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Populate Unified Ledger table
+    const ledgerTbody = document.getElementById('adminLedgerTableBody');
+    if (ledgerTbody) {
+      if (!data.recentTransactions || data.recentTransactions.length === 0) {
+        ledgerTbody.innerHTML = '<tr><td colspan="7" class="empty-tx-placeholder">لا توجد عمليات مسجلة في السجل العام بعد.</td></tr>';
+      } else {
+        ledgerTbody.innerHTML = data.recentTransactions.map(tx => {
+          const isDeposit = tx.type === 'deposit';
+          const typeBadge = `<span class="tx-badge ${isDeposit ? 'tx-deposit' : 'tx-withdraw'}">${isDeposit ? 'إيداع وارد' : 'سحب صادر'}</span>`;
+          const explorer = tx.networkId === 'tron-mainnet'
+            ? `https://tronscan.org/#/transaction/${tx.txHash}`
+            : `https://bscscan.com/tx/${tx.txHash}`;
+
+          return `
+            <tr>
+              <td>${typeBadge}</td>
+              <td>${tx.assetId || 'USDT'} (${tx.networkId === 'tron-mainnet' ? 'TRON' : 'BSC'})</td>
+              <td><strong>${tx.amount}</strong></td>
+              <td><code style="font-size: 11px;">${(tx.toAddress || tx.destinationAddress || '').substring(0, 10)}...</code></td>
+              <td>
+                <a href="${explorer}" target="_blank" rel="noopener noreferrer" style="color: var(--green); text-decoration: underline; font-size: 12px;">
+                  ${tx.txHash.substring(0, 10)}... ↗
+                </a>
+              </td>
+              <td><span style="color: var(--green); font-size: 12px;">✓ ${tx.status || 'confirmed'}</span></td>
+              <td><small>${new Date(tx.createdAt).toLocaleDateString('ar-EG')}</small></td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    // Populate Settings form
+    if (data.settings) {
+      const sName = document.getElementById('settingSiteName');
+      const sMaint = document.getElementById('settingMaintenanceMode');
+      const sMinDep = document.getElementById('settingMinDeposit');
+      const sMinWth = document.getElementById('settingMinWithdraw');
+      const sFee = document.getElementById('settingWithdrawFee');
+      const sEmail = document.getElementById('settingOwnerEmail');
+
+      if (sName) sName.value = data.settings.siteName || 'INVEST';
+      if (sMaint) sMaint.checked = !!data.settings.maintenanceMode;
+      if (sMinDep) sMinDep.value = data.settings.minDepositUsdt || 1.0;
+      if (sMinWth) sMinWth.value = data.settings.minWithdrawUsdt || 5.0;
+      if (sFee) sFee.value = data.settings.withdrawFeePercent || 0.5;
+      if (sEmail) sEmail.value = data.settings.ownerEmail || 'wahablila31000@gmail.com';
+    }
+  } catch (err) {
+    console.error('Error fetching admin data:', err.message);
+  }
+}
+
+function switchAdminTab(tabName) {
+  const tabs = ['users', 'ledger', 'settings'];
+  tabs.forEach(t => {
+    const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+    const panel = document.getElementById('adminTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) btn.classList.toggle('active', t === tabName);
+    if (panel) panel.style.display = t === tabName ? 'block' : 'none';
+  });
+}
+
+async function handleSaveSettings(event) {
+  event.preventDefault();
+  const token = getAuthToken();
+  if (!token) return;
+
+  const btn = document.getElementById('adminSettingsSubmitBtn');
+  const feedback = document.getElementById('adminSettingsFeedback');
+
+  btn.disabled = true;
+  btn.innerText = 'جاري الحفظ في Supabase...';
+
+  try {
+    const payload = {
+      siteName: document.getElementById('settingSiteName').value.trim(),
+      maintenanceMode: document.getElementById('settingMaintenanceMode').checked,
+      minDepositUsdt: parseFloat(document.getElementById('settingMinDeposit').value),
+      minWithdrawUsdt: parseFloat(document.getElementById('settingMinWithdraw').value),
+      withdrawFeePercent: parseFloat(document.getElementById('settingWithdrawFee').value)
+    };
+
+    const res = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'تعذر حفظ الإعدادات');
+
+    if (feedback) {
+      feedback.className = 'network-alert-box';
+      feedback.style.borderColor = 'var(--green)';
+      feedback.style.color = 'var(--green)';
+      feedback.style.display = 'block';
+      feedback.innerText = '✓ تم حفظ الإعدادات بنجاح وتطبيقها في Supabase.';
+    }
+
+    showToast('تم حفظ إعدادات المنصة بنجاح ✓');
+  } catch (err) {
+    if (feedback) {
+      feedback.className = 'network-alert-box danger';
+      feedback.style.display = 'block';
+      feedback.innerText = '❌ ' + err.message;
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'حفظ التغييرات في Supabase';
+  }
+}
+
 // Window Event Listeners
 window.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal')) {
@@ -809,3 +1017,7 @@ window.logoutUser = logoutUser;
 window.refreshWalletBalances = refreshWalletBalances;
 window.openVerifyTxModal = openVerifyTxModal;
 window.handleVerifyTx = handleVerifyTx;
+window.scrollToAdminPanel = scrollToAdminPanel;
+window.loadAdminDashboardData = loadAdminDashboardData;
+window.switchAdminTab = switchAdminTab;
+window.handleSaveSettings = handleSaveSettings;
