@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <title>INVEST — إعادة التوجيه</title>
+    <script type="text/javascript">
+      // GitHub Pages SPA redirect: preserves paths when hosted on GitHub Pages subfolder
+      var pathSegmentsToKeep = 1;
+      var l = window.location;
+      var repoSegment = l.pathname.split('/')[1] === 'Invest' ? '/Invest/' : '/';
+      var remainingPath = l.pathname.replace(/^\/Invest\/?/, '').replace(/^\//, '');
+      
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        repoSegment + '?' + remainingPath +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    </script>
+  </head>
+  <body style="background-color: #030712; color: #f8fafc; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
+    <p>جارٍ تحويلك إلى موقع INVEST...</p>
+  </body>
+</html>
