@@ -34,19 +34,29 @@
 
       <nav class="desktop-menu">
         <a href="#home" class="active">الرئيسية</a>
+        <a href="#wallet">المحفظة</a>
         <a href="#features">المميزات</a>
         <a href="#investments">الاستثمار</a>
         <a href="#how">كيف يعمل</a>
         <a href="#about">عن المنصة</a>
       </nav>
 
-      <div class="nav-actions">
+      <div class="nav-actions" id="guestNavActions">
         <button class="btn btn-outline" onclick="openModal('loginModal')">
           تسجيل الدخول
         </button>
 
         <button class="btn btn-primary" onclick="openModal('registerModal')">
           إنشاء حساب
+        </button>
+      </div>
+
+      <div class="nav-actions" id="userNavActions" style="display: none; align-items: center; gap: 12px;">
+        <div class="user-profile-badge">
+          <span id="navUserEmail">مستخدم</span>
+        </div>
+        <button class="btn btn-outline" onclick="logoutUser()">
+          تسجيل الخروج
         </button>
       </div>
 
@@ -62,18 +72,28 @@
 
     <div class="mobile-menu" id="mobileMenu">
       <a href="#home">الرئيسية</a>
+      <a href="#wallet">المحفظة</a>
       <a href="#features">المميزات</a>
       <a href="#investments">الاستثمار</a>
       <a href="#how">كيف يعمل</a>
       <a href="#about">عن المنصة</a>
 
-      <div class="mobile-actions">
+      <div class="mobile-actions" id="mobileGuestActions">
         <button class="btn btn-outline" onclick="openModal('loginModal')">
           تسجيل الدخول
         </button>
 
         <button class="btn btn-primary" onclick="openModal('registerModal')">
           إنشاء حساب
+        </button>
+      </div>
+
+      <div class="mobile-actions" id="mobileUserActions" style="display: none;">
+        <div class="user-profile-badge" style="justify-content: center;">
+          <span id="mobileNavUserEmail">مستخدم</span>
+        </div>
+        <button class="btn btn-outline full" onclick="logoutUser()">
+          تسجيل الخروج
         </button>
       </div>
     </div>
@@ -183,7 +203,213 @@
     </section>
 
 
-    <!-- FEATURES -->
+    <!-- WALLET SECTION -->
+    <section class="section wallet-section" id="wallet">
+      <div class="container">
+
+        <div class="section-heading">
+          <span class="section-label">المحفظة الرقمية</span>
+          <h2>محفظة العملات المشفرة الحقيقية</h2>
+          <p>
+            محفظتك الخاصة المشفرة بنظام الحفظ الذاتي (Self-Custody) تدعم شبكات TRON و BNB Smart Chain وتتصل مباشرة بالـ Blockchain.
+          </p>
+        </div>
+
+        <!-- Network & Database Status Bar -->
+        <div class="system-status-bar">
+          <div class="status-indicator">
+            <span class="status-dot" id="supabaseDot"></span>
+            <span id="supabaseStatusText">جاري فحص Supabase...</span>
+          </div>
+
+          <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span>BNB Smart Chain: متصل (Mainnet)</span>
+          </div>
+
+          <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span>TRON Network: متصل (Mainnet)</span>
+          </div>
+
+          <div class="status-indicator">
+            <span style="color: var(--muted); font-size: 12px;">سعر BNB الحالي: <strong id="liveBnbPriceText" style="color: #f0b90b;">$--</strong></span>
+          </div>
+        </div>
+
+        <!-- GUEST PROMPT (When not logged in) -->
+        <div class="wallet-not-logged" id="walletGuestView">
+          <div class="empty-icon" style="font-size: 48px; margin-bottom: 16px;">🔐</div>
+          <h3>قم بتسجيل الدخول للوصول إلى محفظتك</h3>
+          <p>
+            عند إنشاء حساب جديد، سيتم توليد عناوين محفظتك الخاصة تلقائياً على شبكتي TRON و BNB Smart Chain وتشفير المفاتيح بأعلى معايير الأمان.
+          </p>
+          <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="openModal('registerModal')">
+              إنشاء محفظة جديدة
+            </button>
+            <button class="btn btn-outline" onclick="openModal('loginModal')">
+              تسجيل الدخول
+            </button>
+          </div>
+        </div>
+
+        <!-- AUTHENTICATED WALLET DASHBOARD -->
+        <div id="walletAuthView" style="display: none;">
+
+          <!-- Main Balance Card -->
+          <div class="wallet-card-main">
+            <div class="wallet-overview-grid">
+              <div class="wallet-balance-wrap">
+                <small>إجمالي رصيد المحفظة (تقديري بالدولار)</small>
+                <h1 id="walletTotalUsdDisplay">$0.00</h1>
+              </div>
+
+              <div class="wallet-actions-bar">
+                <button class="btn btn-primary btn-icon" onclick="openReceiveModal()">
+                  <span>📥</span> استقبال / Receive
+                </button>
+                <button class="btn btn-outline btn-icon" onclick="openSendModal()">
+                  <span>📤</span> إرسال / Send
+                </button>
+                <button class="btn btn-outline btn-icon" onclick="refreshWalletBalances()" id="refreshBtn">
+                  <span>🔄</span> تحديث الرصيد
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Assets Heading -->
+          <div class="assets-heading">
+            <h3>الأصول والعملات المدعومة</h3>
+            <span style="font-size: 13px; color: var(--muted);">أرصدة حقيقية ومحدثة من شبكات البلوكشين</span>
+          </div>
+
+          <!-- Assets Grid -->
+          <div class="assets-grid" id="assetsGridContainer">
+            <!-- Asset 1: USDT TRC-20 -->
+            <div class="crypto-asset-card">
+              <div class="asset-top">
+                <div class="asset-identity">
+                  <div class="asset-icon-badge usdt">₮</div>
+                  <div class="asset-name-col">
+                    <strong>USDT</strong>
+                    <span class="network-tag tron">TRON (TRC20)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="asset-balance-col">
+                <div class="asset-balance-val" id="bal-usdt-trc20">0.000000 USDT</div>
+                <div class="asset-fiat-val" id="fiat-usdt-trc20">≈ $0.00 USD</div>
+              </div>
+
+              <div class="asset-address-row">
+                <span id="addr-usdt-trc20" title="عنوان TRON">جاري التحميل...</span>
+                <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;" onclick="copyText(document.getElementById('addr-usdt-trc20').innerText)">نسخ</button>
+              </div>
+
+              <div class="asset-card-buttons">
+                <button class="btn btn-primary" onclick="openReceiveModal('usdt-trc20')">استقبال</button>
+                <button class="btn btn-outline" onclick="openSendModal('usdt-trc20')">إرسال</button>
+              </div>
+            </div>
+
+            <!-- Asset 2: USDT BEP-20 -->
+            <div class="crypto-asset-card">
+              <div class="asset-top">
+                <div class="asset-identity">
+                  <div class="asset-icon-badge usdt">₮</div>
+                  <div class="asset-name-col">
+                    <strong>USDT</strong>
+                    <span class="network-tag bsc">BNB Smart Chain (BEP20)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="asset-balance-col">
+                <div class="asset-balance-val" id="bal-usdt-bep20">0.000000 USDT</div>
+                <div class="asset-fiat-val" id="fiat-usdt-bep20">≈ $0.00 USD</div>
+              </div>
+
+              <div class="asset-address-row">
+                <span id="addr-usdt-bep20" title="عنوان BSC">جاري التحميل...</span>
+                <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;" onclick="copyText(document.getElementById('addr-usdt-bep20').innerText)">نسخ</button>
+              </div>
+
+              <div class="asset-card-buttons">
+                <button class="btn btn-primary" onclick="openReceiveModal('usdt-bep20')">استقبال</button>
+                <button class="btn btn-outline" onclick="openSendModal('usdt-bep20')">إرسال</button>
+              </div>
+            </div>
+
+            <!-- Asset 3: BNB -->
+            <div class="crypto-asset-card">
+              <div class="asset-top">
+                <div class="asset-identity">
+                  <div class="asset-icon-badge bnb">BNB</div>
+                  <div class="asset-name-col">
+                    <strong>BNB</strong>
+                    <span class="network-tag bsc">BNB Smart Chain</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="asset-balance-col">
+                <div class="asset-balance-val" id="bal-bnb-bsc">0.000000 BNB</div>
+                <div class="asset-fiat-val" id="fiat-bnb-bsc">≈ $0.00 USD</div>
+              </div>
+
+              <div class="asset-address-row">
+                <span id="addr-bnb-bsc" title="عنوان BSC">جاري التحميل...</span>
+                <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;" onclick="copyText(document.getElementById('addr-bnb-bsc').innerText)">نسخ</button>
+              </div>
+
+              <div class="asset-card-buttons">
+                <button class="btn btn-primary" onclick="openReceiveModal('bnb-bsc')">استقبال</button>
+                <button class="btn btn-outline" onclick="openSendModal('bnb-bsc')">إرسال</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transaction History Table -->
+          <div class="transactions-panel">
+            <div class="tx-header">
+              <h3>سجل المعاملات (Transaction History)</h3>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;" onclick="openVerifyTxModal()">🔍 فحص إيداع برمز TxHash</button>
+                <button class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;" onclick="refreshWalletBalances()">تحديث السجل ⟳</button>
+              </div>
+            </div>
+
+            <div class="tx-table-container">
+              <table class="tx-table">
+                <thead>
+                  <tr>
+                    <th>النوع</th>
+                    <th>العملة والشبكة</th>
+                    <th>المبلغ</th>
+                    <th>العنوان</th>
+                    <th>رمز المعاملة (TxHash)</th>
+                    <th>الحالة</th>
+                    <th>التاريخ</th>
+                  </tr>
+                </thead>
+                <tbody id="txTableBody">
+                  <tr>
+                    <td colspan="7" class="empty-tx-placeholder">
+                      لا توجد معاملات مسجلة بعد. عند استلام أو إرسال عملات ستظهر تفاصيل المعاملة وروابط Blockchain Explorer هنا.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
     <section class="section" id="features">
 
       <div class="container">
@@ -425,13 +651,16 @@
 
       <div class="modal-header">
         <h2>تسجيل الدخول</h2>
-        <p>ادخل إلى حسابك</p>
+        <p>ادخل إلى محفظتك وحسابك في INVEST</p>
       </div>
 
-      <form onsubmit="demoSubmit(event)">
+      <div id="loginError" style="display: none;" class="network-alert-box danger"></div>
+
+      <form onsubmit="handleLogin(event)">
 
         <label>البريد الإلكتروني</label>
         <input
+          id="loginEmail"
           type="email"
           placeholder="example@email.com"
           required
@@ -439,12 +668,13 @@
 
         <label>كلمة المرور</label>
         <input
+          id="loginPassword"
           type="password"
           placeholder="••••••••"
           required
         >
 
-        <button class="btn btn-primary full" type="submit">
+        <button class="btn btn-primary full" type="submit" id="loginSubmitBtn">
           تسجيل الدخول
         </button>
 
@@ -468,14 +698,17 @@
       </button>
 
       <div class="modal-header">
-        <h2>إنشاء حساب</h2>
-        <p>أنشئ حسابك في INVEST</p>
+        <h2>إنشاء حساب ومحفظة</h2>
+        <p>سيتم إنشاء محفظة مشفرة حقيقية مرتبطة بحسابك تلقائياً</p>
       </div>
 
-      <form onsubmit="demoSubmit(event)">
+      <div id="registerError" style="display: none;" class="network-alert-box danger"></div>
 
-        <label>الاسم</label>
+      <form onsubmit="handleRegister(event)">
+
+        <label>الاسم الكامل</label>
         <input
+          id="registerFullName"
           type="text"
           placeholder="الاسم الكامل"
           required
@@ -483,20 +716,23 @@
 
         <label>البريد الإلكتروني</label>
         <input
+          id="registerEmail"
           type="email"
           placeholder="example@email.com"
           required
         >
 
-        <label>كلمة المرور</label>
+        <label>كلمة المرور (6 أحرف على الأقل)</label>
         <input
+          id="registerPassword"
           type="password"
           placeholder="••••••••"
+          minlength="6"
           required
         >
 
-        <button class="btn btn-primary full" type="submit">
-          إنشاء الحساب
+        <button class="btn btn-primary full" type="submit" id="registerSubmitBtn">
+          إنشاء الحساب وتوليد المحفظة
         </button>
 
       </form>
@@ -506,7 +742,196 @@
   </div>
 
 
+  <!-- RECEIVE MODAL -->
+  <div class="modal" id="receiveModal">
+
+    <div class="modal-box" style="max-width: 480px;">
+
+      <button
+        class="modal-close"
+        onclick="closeModal('receiveModal')"
+      >
+        ×
+      </button>
+
+      <div class="modal-header">
+        <h2>استقبال العملات المشفرة</h2>
+        <p>اختر العملة والشبكة لعرض عنوان محفظتك الحقيقي ورمز QR</p>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 6px; font-size: 13px; color: var(--muted);">اختر العملة والشبكة:</label>
+        <select class="select-custom" id="receiveAssetSelect" onchange="updateReceiveModalDetails()">
+          <option value="usdt-trc20">USDT - شبكة TRON (TRC20)</option>
+          <option value="usdt-bep20">USDT - شبكة BNB Smart Chain (BEP20)</option>
+          <option value="bnb-bsc">BNB - شبكة BNB Smart Chain (Native)</option>
+        </select>
+
+        <!-- Network Warning Notice -->
+        <div class="network-alert-box" id="receiveNetworkWarning">
+          ⚠️ تنبيه مهم: أرسل فقط USDT عبر شبكة TRON (TRC20) إلى هذا العنوان. إرسال عملات عبر شبكات أخرى سيؤدي إلى فقدان أموالك.
+        </div>
+
+        <!-- Real QR Code -->
+        <div class="receive-qr-box">
+          <img id="receiveQrImage" alt="رمز QR للمحفظة" src="" />
+        </div>
+
+        <!-- Copy Address Field -->
+        <label style="display: block; margin-bottom: 4px; font-size: 13px; color: var(--muted);">عنوان الإيداع الخاص بك:</label>
+        <div class="copy-address-field">
+          <span id="receiveAddressText">جاري التحميل...</span>
+          <button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px; white-space: nowrap;" id="copyReceiveBtn" onclick="copyReceiveAddress()">
+            نسخ العنوان
+          </button>
+        </div>
+
+        <p style="font-size: 12px; color: var(--muted); margin-top: 14px; text-align: center; line-height: 1.6;">
+          💡 <strong>Binance:</strong> يمكنك استخدام هذا العنوان مباشرة للإيداع من منصة بينانس عبر اختيار السحب (Withdrawal) واختيار نفس الشبكة المطابقة تماماً.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- SEND MODAL -->
+  <div class="modal" id="sendModal">
+
+    <div class="modal-box" style="max-width: 480px;">
+
+      <button
+        class="modal-close"
+        onclick="closeModal('sendModal')"
+      >
+        ×
+      </button>
+
+      <div class="modal-header">
+        <h2>إرسال عملات مشفرة</h2>
+        <p>إرسال فوري ومباشر عبر شبكة الـ Blockchain</p>
+      </div>
+
+      <div id="sendResultMsg" style="display: none;"></div>
+
+      <form onsubmit="handleSendTransaction(event)">
+
+        <label>اختر العملة والشبكة:</label>
+        <select class="select-custom" id="sendAssetSelect" onchange="updateSendModalDetails()">
+          <option value="usdt-trc20">USDT - شبكة TRON (TRC20)</option>
+          <option value="usdt-bep20">USDT - شبكة BNB Smart Chain (BEP20)</option>
+          <option value="bnb-bsc">BNB - شبكة BNB Smart Chain (Native)</option>
+        </select>
+
+        <label>عنوان المستلم:</label>
+        <input
+          id="sendToAddress"
+          type="text"
+          placeholder="أدخل عنوان المحفظة أو منصة Binance"
+          oninput="validateSendAddressLive()"
+          required
+        >
+        <div id="sendAddressFeedback" style="font-size: 12px; margin-top: -10px; margin-bottom: 2px;"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: -10px;">
+          <label>المبلغ المراد إرساله:</label>
+          <span id="sendAvailableBalanceLabel" style="font-size: 12px; color: var(--green); cursor: pointer;" onclick="fillMaxAmount()">الرصيد: 0.00 (الحد الأقصى)</span>
+        </div>
+        <input
+          id="sendAmountInput"
+          type="number"
+          step="any"
+          placeholder="0.00"
+          oninput="calculateSendTotal()"
+          required
+        >
+
+        <!-- Network Fee & Calculation Box -->
+        <div class="fee-calc-box">
+          <div class="fee-calc-row">
+            <span>رسوم الشبكة (Gas Fee):</span>
+            <strong id="sendEstimatedFeeText">جاري الحساب...</strong>
+          </div>
+          <div class="fee-calc-row">
+            <span>الإجمالي المخصوم:</span>
+            <strong id="sendTotalDeductionText">0.00</strong>
+          </div>
+        </div>
+
+        <div class="network-alert-box" id="sendSecurityAlert" style="margin-top: 10px; font-size: 12px;">
+          🔒 المعاملة ستُوقع وتُبث مباشرة إلى الـ Blockchain الحقيقي دون وسطاء.
+        </div>
+
+        <button class="btn btn-primary full" type="submit" id="sendSubmitBtn" style="margin-top: 14px;">
+          تأكيد وإرسال المعاملة إلى البلوكشين
+        </button>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- VERIFY TX MODAL -->
+  <div class="modal" id="verifyTxModal">
+
+    <div class="modal-box" style="max-width: 480px;">
+
+      <button
+        class="modal-close"
+        onclick="closeModal('verifyTxModal')"
+      >
+        ×
+      </button>
+
+      <div class="modal-header">
+        <h2>فحص وتأكيد إيداع على الـ Blockchain</h2>
+        <p>تحقق فوري من أي عملية إيداع عبر معرف المعاملة (TxHash)</p>
+      </div>
+
+      <div id="verifyTxResultMsg" style="display: none;"></div>
+
+      <form onsubmit="handleVerifyTx(event)">
+
+        <label>الشبكة:</label>
+        <select class="select-custom" id="verifyNetworkSelect">
+          <option value="tron-mainnet">شبكة TRON (TRC20)</option>
+          <option value="bsc-mainnet">شبكة BNB Smart Chain (BEP20 / BNB)</option>
+        </select>
+
+        <label style="margin-top: 12px; display: block;">معرف المعاملة (TxHash / Transaction ID):</label>
+        <input
+          id="verifyTxHashInput"
+          type="text"
+          placeholder="أدخل رمز TxHash المستلم من Binance أو المحفظة الخارجية"
+          required
+        >
+
+        <div style="font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.6;">
+          💡 يتم فحص الـ Blockchain الحقيقي مباشرة، والتحقق من عدد التأكيدات (Confirmations) وتحديث رصيدك وسجل المعاملات تلقائياً.
+        </div>
+
+        <button class="btn btn-primary full" type="submit" id="verifyTxSubmitBtn" style="margin-top: 16px;">
+          فحص وتأكيد المعاملة الآن
+        </button>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- Toast Notification -->
+  <div id="toastNotification" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #121a29; border: 1px solid var(--green); color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 9999; display: none; align-items: center; gap: 8px;">
+    <span id="toastIcon">✓</span>
+    <span id="toastMessage">تمت العملية بنجاح</span>
+  </div>
+
+
   <script src="./app.js"></script>
 
 </body>
-  </html>
+</html>
