@@ -3,9 +3,14 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(({ command }) => {
-  // For production build and GitHub Pages deployment: base is /Invest/
-  const base = process.env.VITE_BASE || (command === 'build' ? '/Invest/' : '/');
+export default defineConfig(() => {
+  // Development / AI Studio preview: base: '/'
+  // GitHub Actions / GitHub Pages production: base: '/Invest/'
+  const isGitHubActions =
+    process.env.GITHUB_ACTIONS === 'true' ||
+    process.env.GITHUB_PAGES === 'true';
+
+  const base = process.env.VITE_BASE || (isGitHubActions ? '/Invest/' : '/');
 
   return {
     base,
